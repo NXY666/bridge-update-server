@@ -135,8 +135,22 @@ export async function triggerRebuild(discoverPeers) {
   }
 }
 
-// 下载APK并缓存到本地（仅当无缓存时执行）
-export async function downloadApk(discoverPeers) {
-  if (hasCachedApk()) return;
-  await triggerRebuild(discoverPeers);
+// 不存在则下载，SHA256不匹配则重建
+export async function syncApk(discoverPeers) {
+  const info = getVersionInfo();
+  if (!info || downloading) return;
+
+  const filePath = getCachedApkPath();
+  if (!filePath) {
+    await triggerRebuild(discoverPeers);
+    return;
+  }
+
+  if (info.sha256) {
+    const actual = await computeSha256(filePath);
+    if (actual !== info.sha256) {
+      console.warn('[Cache]', 'SHA256不匹配，重建缓存', 'expected=', info.sha256, 'actual=', actual);
+      await triggerRebuild(discoverPeers);
+    }
+  }
 }

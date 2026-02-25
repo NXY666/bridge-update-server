@@ -9,7 +9,7 @@ const VERSION_FILE = join(CACHE_DIR, 'version.json');
 const POLL_INTERVAL = 60 * 60 * 1000;
 
 let versionInfo = null;
-let onChangeCallback = null;
+let afterPollCallback = null;
 
 async function fetchLatestRelease() {
 	const res = await fetch(API_URL, {
@@ -84,12 +84,11 @@ async function poll() {
 	try {
 		const info = await fetchLatestRelease();
 		if (info) {
-			const prevCode = versionInfo?.versionCode;
 			versionInfo = info;
 			await saveVersionCache(info);
 			console.log('[GitHub]', '版本信息已更新', 'version=', info.versionName, 'code=', info.versionCode);
-			if (prevCode !== info.versionCode && onChangeCallback) {
-				onChangeCallback(info);
+			if (afterPollCallback) {
+				afterPollCallback(info);
 			}
 		}
 	} catch (err) {
@@ -107,9 +106,9 @@ export function getApkUrl() {
 	return versionInfo?.apkUrl || '';
 }
 
-// 注册版本变更回调
-export function onVersionChange(cb) {
-	onChangeCallback = cb;
+// 注册每次轮询成功后的回调
+export function onPollComplete(cb) {
+	afterPollCallback = cb;
 }
 
 // 启动GitHub轮询
@@ -117,6 +116,10 @@ export async function startGithubPolling() {
 	const cached = await loadCachedVersion();
 	if (cached) {
 		versionInfo = cached;
+
+		if (afterPollCallback) {
+			afterPollCallback(cached);
+		}
 
 		// 等待缓存过期后再开始轮询
 		setTimeout(async () => {

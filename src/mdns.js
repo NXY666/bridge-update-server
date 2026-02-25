@@ -38,7 +38,7 @@ export async function startMdns(port, mdnsHost, mdnsPort, mdnsPath) {
 }
 
 // 扫描局域网内的其它update-server
-export function discoverPeers(mdnsPath) {
+export function discoverPeers() {
 	return new Promise((resolve) => {
 		if (!bonjourInstance) {
 			resolve([]);
