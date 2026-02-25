@@ -15,7 +15,7 @@ const TYPE = {
 	TXT: 16,
 	AAAA: 28,
 	SRV: 33,
-	ANY: 255,
+	ANY: 255
 };
 
 const CLASS_IN = 1;
@@ -33,7 +33,9 @@ function encodeName(name) {
 	const out = [];
 	for (const p of parts) {
 		const b = Buffer.from(p, 'utf8');
-		if (b.length > 63) throw new Error(`label too long: ${p}`);
+		if (b.length > 63) {
+			throw new Error(`label too long: ${p}`);
+		}
 		out.push(Buffer.from([b.length]));
 		out.push(b);
 	}
@@ -41,7 +43,7 @@ function encodeName(name) {
 	return Buffer.concat(out);
 }
 
-function buildQueryPacket({ id = 0, questions = [] }) {
+function buildQueryPacket({id = 0, questions = []}) {
 	// 标准 DNS 头 12 字节
 	const header = Buffer.alloc(12);
 	header.writeUInt16BE(id & 0xffff, 0);     // ID（mDNS 中通常忽略）
@@ -64,7 +66,9 @@ function buildQueryPacket({ id = 0, questions = [] }) {
 }
 
 function readName(buf, offset, depth = 0) {
-	if (depth > 20) throw new Error('DNS name compression too deep');
+	if (depth > 20) {
+		throw new Error('DNS name compression too deep');
+	}
 
 	const labels = [];
 	let pos = offset;
@@ -72,14 +76,20 @@ function readName(buf, offset, depth = 0) {
 	let jumped = false;
 
 	while (true) {
-		if (pos >= buf.length) throw new Error('readName out of bounds');
+		if (pos >= buf.length) {
+			throw new Error('readName out of bounds');
+		}
 		const len = buf[pos];
 
 		// pointer: 11xxxxxx xxxxxxxx
 		if ((len & 0xc0) === 0xc0) {
-			if (pos + 1 >= buf.length) throw new Error('bad compression pointer');
+			if (pos + 1 >= buf.length) {
+				throw new Error('bad compression pointer');
+			}
 			const ptr = ((len & 0x3f) << 8) | buf[pos + 1];
-			if (!jumped) consumed += 2;
+			if (!jumped) {
+				consumed += 2;
+			}
 			const rec = readName(buf, ptr, depth + 1);
 			labels.push(rec.name.replace(/\.$/, ''));
 			pos += 2;
@@ -88,23 +98,29 @@ function readName(buf, offset, depth = 0) {
 		}
 
 		if (len === 0) {
-			if (!jumped) consumed += 1;
+			if (!jumped) {
+				consumed += 1;
+			}
 			pos += 1;
 			break;
 		}
 
 		const start = pos + 1;
 		const end = start + len;
-		if (end > buf.length) throw new Error('label out of bounds');
+		if (end > buf.length) {
+			throw new Error('label out of bounds');
+		}
 
 		labels.push(buf.slice(start, end).toString('utf8'));
 		pos = end;
-		if (!jumped) consumed += 1 + len;
+		if (!jumped) {
+			consumed += 1 + len;
+		}
 	}
 
 	return {
 		name: labels.filter(Boolean).join('.') + '.',
-		bytes: consumed,
+		bytes: consumed
 	};
 }
 
@@ -114,7 +130,9 @@ function parseTXT(rdata) {
 	while (i < rdata.length) {
 		const n = rdata[i];
 		i += 1;
-		if (i + n > rdata.length) break;
+		if (i + n > rdata.length) {
+			break;
+		}
 		out.push(rdata.slice(i, i + n).toString('utf8'));
 		i += n;
 	}
@@ -133,40 +151,48 @@ function parseRRData(type, rdata, fullBuf, rdataOffset) {
 	try {
 		switch (type) {
 			case TYPE.A:
-				if (rdata.length !== 4) return { raw: rdata.toString('hex') };
-				return { address: `${rdata[0]}.${rdata[1]}.${rdata[2]}.${rdata[3]}` };
+				if (rdata.length !== 4) {
+					return {raw: rdata.toString('hex')};
+				}
+				return {address: `${rdata[0]}.${rdata[1]}.${rdata[2]}.${rdata[3]}`};
 
 			case TYPE.AAAA:
-				if (rdata.length !== 16) return { raw: rdata.toString('hex') };
-				return { address: parseIPv6(rdata) };
+				if (rdata.length !== 16) {
+					return {raw: rdata.toString('hex')};
+				}
+				return {address: parseIPv6(rdata)};
 
 			case TYPE.PTR: {
 				const n = readName(fullBuf, rdataOffset);
-				return { ptrdname: n.name };
+				return {ptrdname: n.name};
 			}
 
 			case TYPE.SRV: {
-				if (rdata.length < 6) return { raw: rdata.toString('hex') };
+				if (rdata.length < 6) {
+					return {raw: rdata.toString('hex')};
+				}
 				const priority = rdata.readUInt16BE(0);
 				const weight = rdata.readUInt16BE(2);
 				const port = rdata.readUInt16BE(4);
 				const target = readName(fullBuf, rdataOffset + 6).name;
-				return { priority, weight, port, target };
+				return {priority, weight, port, target};
 			}
 
 			case TYPE.TXT:
-				return { txt: parseTXT(rdata) };
+				return {txt: parseTXT(rdata)};
 
 			default:
-				return { raw: rdata.toString('hex') };
+				return {raw: rdata.toString('hex')};
 		}
 	} catch (e) {
-		return { parseError: String(e.message || e), raw: rdata.toString('hex') };
+		return {parseError: String(e.message || e), raw: rdata.toString('hex')};
 	}
 }
 
 function parsePacket(buf) {
-	if (buf.length < 12) throw new Error('packet too short');
+	if (buf.length < 12) {
+		throw new Error('packet too short');
+	}
 
 	const header = {
 		id: buf.readUInt16BE(0),
@@ -174,7 +200,7 @@ function parsePacket(buf) {
 		qd: buf.readUInt16BE(4),
 		an: buf.readUInt16BE(6),
 		ns: buf.readUInt16BE(8),
-		ar: buf.readUInt16BE(10),
+		ar: buf.readUInt16BE(10)
 	};
 
 	let off = 12;
@@ -183,11 +209,13 @@ function parsePacket(buf) {
 	for (let i = 0; i < header.qd; i++) {
 		const qn = readName(buf, off);
 		off += qn.bytes;
-		if (off + 4 > buf.length) throw new Error('question tail out of bounds');
+		if (off + 4 > buf.length) {
+			throw new Error('question tail out of bounds');
+		}
 		const qtype = buf.readUInt16BE(off);
 		const qclass = buf.readUInt16BE(off + 2);
 		off += 4;
-		questions.push({ name: qn.name, type: qtype, class: qclass });
+		questions.push({name: qn.name, type: qtype, class: qclass});
 	}
 
 	function parseRRSection(count) {
@@ -195,7 +223,9 @@ function parsePacket(buf) {
 		for (let i = 0; i < count; i++) {
 			const nn = readName(buf, off);
 			off += nn.bytes;
-			if (off + 10 > buf.length) throw new Error('RR header out of bounds');
+			if (off + 10 > buf.length) {
+				throw new Error('RR header out of bounds');
+			}
 
 			const type = buf.readUInt16BE(off);
 			const rrclass = buf.readUInt16BE(off + 2);
@@ -205,7 +235,9 @@ function parsePacket(buf) {
 
 			const rdataOffset = off;
 			const rdataEnd = off + rdlen;
-			if (rdataEnd > buf.length) throw new Error('RDATA out of bounds');
+			if (rdataEnd > buf.length) {
+				throw new Error('RDATA out of bounds');
+			}
 			const rdata = buf.slice(rdataOffset, rdataEnd);
 
 			const data = parseRRData(type, rdata, buf, rdataOffset);
@@ -217,7 +249,7 @@ function parsePacket(buf) {
 				class: rrclass & 0x7fff,
 				cacheFlush: Boolean(rrclass & 0x8000),
 				ttl,
-				data,
+				data
 			});
 		}
 		return arr;
@@ -227,7 +259,7 @@ function parsePacket(buf) {
 	const authorities = parseRRSection(header.ns);
 	const additionals = parseRRSection(header.ar);
 
-	return { header, questions, answers, authorities, additionals };
+	return {header, questions, answers, authorities, additionals};
 }
 
 function rrTypeName(t) {
@@ -253,11 +285,13 @@ function logRR(prefix, rr) {
 
 function sendPTRQuery(sock, name) {
 	const fqdn = labelsToName(name);
-	if (queriedNames.has(fqdn)) return;
+	if (queriedNames.has(fqdn)) {
+		return;
+	}
 	queriedNames.add(fqdn);
 
 	const packet = buildQueryPacket({
-		questions: [{ name: fqdn, type: TYPE.PTR, class: CLASS_IN }],
+		questions: [{name: fqdn, type: TYPE.PTR, class: CLASS_IN}]
 	});
 
 	sock.send(packet, MDNS_PORT, MDNS_ADDR, (err) => {
@@ -275,7 +309,7 @@ function getIPv4Interfaces() {
 	for (const [ifname, addrs] of Object.entries(nets)) {
 		for (const a of addrs || []) {
 			if (a.family === 'IPv4' && !a.internal) {
-				out.push({ ifname, address: a.address });
+				out.push({ifname, address: a.address});
 			}
 		}
 	}
@@ -283,7 +317,7 @@ function getIPv4Interfaces() {
 }
 
 function main() {
-	const sock = dgram.createSocket({ type: 'udp4', reuseAddr: true });
+	const sock = dgram.createSocket({type: 'udp4', reuseAddr: true});
 
 	sock.on('error', (err) => {
 		console.error('[socket error]', err);
