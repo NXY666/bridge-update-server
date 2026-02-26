@@ -13,6 +13,11 @@ export function createRouter(discoverPeers, svrOptions = {}, serverPort = 0) {
 	// 静态文件
 	router.use(express.static(join(__dirname, '../public')));
 
+	// 连通性探测
+	router.get('/hello', (req, res) => {
+		res.send('hello');
+	});
+
 	// 获取最新版本信息
 	router.get('/version', (req, res) => {
 		const info = getVersionInfo();
