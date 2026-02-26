@@ -1,13 +1,20 @@
-import {Router} from 'express';
-import {getApkUrl, getVersionInfo} from './github.js';
-import {getCachedApkSize, getCachedApkStream, hasCachedApk, triggerRebuild, verifyCachedApk} from './cache.js';
+import {fileURLToPath} from 'node:url';
+import {dirname, join} from 'node:path';
+import express, {Router} from 'express';
+import {getVersionInfo} from './github.js';
+import {getCachedApkSize, getCachedApkStream, hasCachedApk, syncApk} from './cache.js';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // 创建REST API路由
 export function createRouter(mdnsPath, discoverPeers) {
 	const router = Router();
 
+	// 静态文件
+	router.use(express.static(join(__dirname, '../public')));
+
 	// 获取最新版本信息
-	router.get('/version', async (req, res) => {
+	router.get('/version', (req, res) => {
 		const info = getVersionInfo();
 		if (!info) {
 			return res.status(503).json({
@@ -16,13 +23,11 @@ export function createRouter(mdnsPath, discoverPeers) {
 			});
 		}
 
-		let downloadUrl;
+		let localUrl = null;
 		if (hasCachedApk()) {
 			const proto = req.get('X-Forwarded-Proto') || req.protocol || 'http';
 			const host = req.get('X-Forwarded-Host') || req.get('Host');
-			downloadUrl = `${proto}://${host}${mdnsPath}/download`;
-		} else {
-			downloadUrl = info.apkUrl;
+			localUrl = `${proto}://${host}${mdnsPath}/download`;
 		}
 
 		res.json({
@@ -30,7 +35,10 @@ export function createRouter(mdnsPath, discoverPeers) {
 			data: {
 				versionName: info.versionName,
 				versionCode: info.versionCode,
-				downloadUrl,
+				downUrl: {
+					local: localUrl,
+					github: info.apkUrl
+				},
 				sha256: info.sha256
 			}
 		});
@@ -38,21 +46,19 @@ export function createRouter(mdnsPath, discoverPeers) {
 
 	// 下载APK
 	router.get('/download', async (req, res) => {
-		if (hasCachedApk()) {
-			const valid = await verifyCachedApk();
-			if (valid) {
-				const size = await getCachedApkSize();
-				res.set('Content-Type', 'application/vnd.android.package-archive');
-				if (size > 0) {
-					res.set('Content-Length', String(size));
-				}
-				getCachedApkStream().pipe(res);
-				return;
+		const ready = await syncApk(discoverPeers);
+		if (ready) {
+			const size = await getCachedApkSize();
+			const filename = 'Bridge_v' + getVersionInfo().versionName + '.apk';
+			res.set('Content-Type', 'application/vnd.android.package-archive');
+			res.set('Content-Disposition', 'attachment; filename="' + filename + '"');
+			if (size > 0) {
+				res.set('Content-Length', String(size));
 			}
-			console.warn('[Router]', '缓存SHA256验证失败，重建缓存');
-			triggerRebuild(discoverPeers);
+			getCachedApkStream().pipe(res);
+			return;
 		}
-		const apkUrl = getApkUrl();
+		const apkUrl = getVersionInfo()?.apkUrl;
 		if (!apkUrl) {
 			return res.status(503).json({
 				state: false,

@@ -148,24 +148,24 @@ export async function triggerRebuild(discoverPeers) {
 	}
 }
 
-// 不存在则下载，SHA256不匹配则重建
+// 确保APK缓存可用。返回true表示已就绪，false表示正在同步中
 export async function syncApk(discoverPeers) {
 	const info = getVersionInfo();
-	if (!info || downloading) {
-		return;
-	}
+	if (!info || downloading) return false;
 
 	const filePath = getCachedApkPath();
 	if (!filePath) {
-		await triggerRebuild(discoverPeers);
-		return;
+		triggerRebuild(discoverPeers);
+		return false;
 	}
 
 	if (info.sha256) {
 		const actual = await computeSha256(filePath);
 		if (actual !== info.sha256) {
-			console.warn('[Cache]', 'SHA256不匹配，重建缓存', 'expected=', info.sha256, 'actual=', actual);
-			await triggerRebuild(discoverPeers);
+			console.warn('[Cache]', 'SHA256不匹配', 'expected=', info.sha256, 'actual=', actual);
+			triggerRebuild(discoverPeers);
+			return false;
 		}
 	}
+	return true;
 }
