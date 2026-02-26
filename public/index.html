@@ -98,7 +98,7 @@
 			<span class="status" id="status-text">正在获取版本信息…</span>
 		</div>
 		<div id="buttons" style="display: none;">
-			<a id="btn-cache" class="btn btn-cache">本地下载</a>
+			<a id="btn-cache" class="btn btn-cache" target="_blank" rel="noopener">本地下载</a>
 			<a id="btn-github" class="btn btn-github" target="_blank" rel="noopener">GitHub 下载</a>
 		</div>
 		<div id="sha256"></div>
@@ -124,7 +124,7 @@
 			const btnGithub = document.getElementById('btn-github');
 
 			if (downUrl.local) {
-				btnCache.href = base + 'download';
+				btnCache.href = downUrl.local;
 			} else {
 				btnCache.removeAttribute('href');
 				btnCache.classList.add('btn-disabled');
