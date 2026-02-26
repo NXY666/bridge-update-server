@@ -1,6 +1,6 @@
 {
   "name": "bridge-update-server",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "Bridge App Update Server",
   "type": "module",
   "bin": {
@@ -9,6 +9,10 @@
   "main": "src/server.js",
   "scripts": {
     "start": "node bin/bridge-updater.js"
+  },
+  "repository": {
+    "url": "git+https://github.com/NXY666/bridge-update-server.git",
+    "branch": "master"
   },
   "engines": {
     "node": ">=18.0.0"
