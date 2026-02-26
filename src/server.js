@@ -6,18 +6,14 @@ import {syncApk} from './cache.js';
 import {discoverPeers, startMdns} from './mdns.js';
 
 export async function startServer(options) {
-	const {port, mdnsHost, mdnsPort, mdnsPath} = options;
+	const {port, svrOptions} = options;
 
 	const app = express();
 	const server = createServer(app);
 
 	// 挂载路由
-	const router = createRouter(mdnsPath, discoverPeers);
-	if (mdnsPath) {
-		app.use(mdnsPath, router);
-	} else {
-		app.use(router);
-	}
+	const router = createRouter(discoverPeers, svrOptions, port);
+	app.use(router);
 
 	// 每次轮询成功后同步APK
 	onPollComplete(() => syncApk(discoverPeers));
@@ -31,7 +27,7 @@ export async function startServer(options) {
 	});
 
 	// 启动mDNS广播
-	await startMdns(port, mdnsHost, mdnsPort, mdnsPath);
+	await startMdns(port, svrOptions);
 
 	return server;
 }

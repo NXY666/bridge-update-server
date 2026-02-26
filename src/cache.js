@@ -17,11 +17,6 @@ export function getCachedApkPath() {
 	return existsSync(filePath) ? filePath : null;
 }
 
-// 是否已有APK缓存
-export function hasCachedApk() {
-	return getCachedApkPath() !== null;
-}
-
 // 获取APK文件流
 export function getCachedApkStream() {
 	const filePath = getCachedApkPath();
@@ -49,17 +44,6 @@ function computeSha256(filePath) {
 		stream.on('end', () => resolve(hash.digest('hex')));
 		stream.on('error', reject);
 	});
-}
-
-// 验证本地缓存文件的SHA256是否匹配
-export async function verifyCachedApk() {
-	const info = getVersionInfo();
-	const filePath = getCachedApkPath();
-	if (!filePath || !info?.sha256) {
-		return false;
-	}
-	const actual = await computeSha256(filePath);
-	return actual === info.sha256;
 }
 
 async function downloadFromUrl(url, destPath) {
@@ -151,7 +135,9 @@ export async function triggerRebuild(discoverPeers) {
 // 确保APK缓存可用。返回true表示已就绪，false表示正在同步中
 export async function syncApk(discoverPeers) {
 	const info = getVersionInfo();
-	if (!info || downloading) return false;
+	if (!info || downloading) {
+		return false;
+	}
 
 	const filePath = getCachedApkPath();
 	if (!filePath) {

@@ -11,19 +11,19 @@ let publishedService = null;
 const instanceId = randomUUID();
 
 // 启动mDNS广播
-export async function startMdns(port, mdnsHost, mdnsPort, mdnsPath) {
+export async function startMdns(port, svrOptions = {}) {
 	bonjourInstance = new Bonjour();
 	ciaoResponder = ciao.getResponder();
 
 	const txt = {instance: instanceId};
-	if (mdnsPath) {
-		txt.path = mdnsPath;
+	if (svrOptions.path) {
+		txt.path = svrOptions.path;
 	}
-	if (mdnsHost) {
-		txt.host = mdnsHost;
+	if (svrOptions.host) {
+		txt.host = svrOptions.host;
 	}
-	if (mdnsPort) {
-		txt.port = String(mdnsPort);
+	if (svrOptions.port) {
+		txt.port = String(svrOptions.port);
 	}
 
 	publishedService = ciaoResponder.createService({

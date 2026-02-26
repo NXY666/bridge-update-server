@@ -20,20 +20,30 @@ if (args.includes('--help') || args.includes('-h')) {
 		'用法: bridge-updater [options]',
 		'',
 		'选项:',
-		'  --port <number>       HTTP 端口 (默认: 51145)',
-		'  --mdns-host <string>  mDNS 广播的 host 覆盖值',
-		'  --mdns-port <number>  mDNS 广播的 port 覆盖值',
-		'  --mdns-path <string>  API 路径前缀 (默认: "")',
-		'  --help, -h            显示帮助信息',
+		'  --port <number>        HTTP 端口 (默认: 51145)',
+		'  --svr-proto <string>   服务对外的协议 (如 https)',
+		'  --svr-host <string>    服务对外的域名或IP',
+		'  --svr-port <number>    服务对外的端口',
+		'  --svr-path <string>    服务对外的路径前缀',
+		'  --help, -h             显示帮助信息',
 		''
 	].join('\n'));
 	process.exit(0);
 }
 
 const port = parseInt(getArg('--port', '51145'), 10);
-const mdnsHost = getArg('--mdns-host', '') || '';
-const mdnsPort = parseInt(getArg('--mdns-port', '0'), 10) || 0;
-const mdnsPath = (getArg('--mdns-path', '') || '').replace(/^\/+/, '').replace(/\/+$/, '');
-const normalizedPath = mdnsPath ? '/' + mdnsPath : '';
+const svrProto = getArg('--svr-proto', '') || '';
+const svrHost = getArg('--svr-host', '') || '';
+const svrPort = parseInt(getArg('--svr-port', '0'), 10) || 0;
+const svrPath = (getArg('--svr-path', '') || '').replace(/^\/+/, '').replace(/\/+$/, '');
+const normalizedSvrPath = svrPath ? '/' + svrPath : '';
 
-startServer({port, mdnsHost, mdnsPort, mdnsPath: normalizedPath});
+startServer({
+	port,
+	svrOptions: {
+		proto: svrProto,
+		host: svrHost,
+		port: svrPort,
+		path: normalizedSvrPath
+	}
+});
