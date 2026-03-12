@@ -1,8 +1,7 @@
 import express from 'express';
 import {createServer} from 'node:http';
 import {createRouter} from './router.js';
-import {initGithubClient, onPollComplete, startGithubPolling} from './github.js';
-import {syncApk} from './cache.js';
+import {startGithubPolling} from './github.js';
 import {discoverPeers, startMdns} from './mdns.js';
 
 export async function startServer(options) {
@@ -15,13 +14,8 @@ export async function startServer(options) {
 	const router = createRouter(discoverPeers, svrOptions, port);
 	app.use(router);
 
-	// 每次轮询成功后同步APK
-	onPollComplete(() => syncApk(discoverPeers));
-
-	await initGithubClient(githubToken);
-
 	// 启动GitHub轮询
-	await startGithubPolling({token: githubToken});
+	await startGithubPolling(githubToken);
 
 	// 启动HTTP服务
 	server.listen(port, () => {

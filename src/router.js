@@ -68,7 +68,7 @@ export function createRouter(discoverPeers, svrOptions = {}, serverPort = 0) {
 
 	// 下载APK
 	router.get('/download', async (req, res) => {
-		const ready = await syncApk(discoverPeers);
+		const ready = await syncApk(getVersionInfo(), discoverPeers);
 		if (ready) {
 			const size = await getCachedApkSize();
 			const filename = 'Bridge_v' + getVersionInfo().versionName + '.apk';
@@ -80,6 +80,7 @@ export function createRouter(discoverPeers, svrOptions = {}, serverPort = 0) {
 			getCachedApkStream().pipe(res);
 			return;
 		}
+
 		const apkUrl = getVersionInfo()?.apkUrl;
 		if (!apkUrl) {
 			return res.status(503).json({
