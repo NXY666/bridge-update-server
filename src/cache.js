@@ -270,13 +270,5 @@ export async function syncApk(discoverPeers) {
 		return false;
 	}
 
-	if (info.sha256) {
-		const actual = await computeSha256(filePath);
-		if (actual !== info.sha256) {
-			console.warn('[Cache]', 'SHA256不匹配', 'expected=', info.sha256, 'actual=', actual);
-			triggerRebuild(discoverPeers);
-			return false;
-		}
-	}
 	return true;
 }

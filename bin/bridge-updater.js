@@ -25,6 +25,7 @@ if (args.includes('--help') || args.includes('-h')) {
 		'  --svr-host <string>    服务对外的域名或IP',
 		'  --svr-port <number>    服务对外的端口',
 		'  --svr-path <string>    服务对外的路径前缀',
+		'  --github-token <string> GitHub 访问令牌',
 		'  --help, -h             显示帮助信息',
 		''
 	].join('\n'));
@@ -37,9 +38,11 @@ const svrHost = getArg('--svr-host', '') || '';
 const svrPort = parseInt(getArg('--svr-port', '0'), 10) || 0;
 const svrPath = (getArg('--svr-path', '') || '').replace(/^\/+/, '').replace(/\/+$/, '');
 const normalizedSvrPath = svrPath ? '/' + svrPath : '';
+const githubToken = getArg('--github-token', '') || '';
 
 startServer({
 	port,
+	githubToken,
 	svrOptions: {
 		proto: svrProto,
 		host: svrHost,
