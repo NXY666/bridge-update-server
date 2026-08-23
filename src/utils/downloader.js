@@ -19,7 +19,7 @@ export class FatalDownloadError extends Error {
 
 // 并发下载参数
 const TARGET_SPEED_KBPS = 2048; // 目标总下载速度（KB/s）
-const MAX_THREADS = 32;         // 最大并发线程数
+const MAX_THREADS = 64;         // 最大并发线程数
 const PROBE_SIZE = 512 * 1024;  // 探测块大小：512KB
 const PROGRESS_INTERVAL_MS = 15 * 1000;
 const MAX_RETRY_DELAY_SEC = 8;

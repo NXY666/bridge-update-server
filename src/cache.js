@@ -124,8 +124,8 @@ export async function rebuildApkCache(info, discoverPeers) {
 					console.warn('[Cache]', '服务器返回错误，放弃下载', 'error=', err.message);
 					return;
 				}
-				const delaySec = Math.min(Math.pow(2, attempt - 1), 8);
-				console.warn('[Cache]', '下载失败，等待后重试', 'attempt=', attempt, 'delaySec=', delaySec, 'error=', err.message);
+				const delaySec = Math.min(Math.pow(2, attempt - 1), 2);
+				console.warn('[Cache]', '下载失败', 'attempt=', attempt, 'delaySec=', delaySec, 'error=', err.message);
 				await new Promise(r => setTimeout(r, delaySec * 1000));
 			}
 		}
